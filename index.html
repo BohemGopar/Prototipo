@@ -141,7 +141,7 @@ input.qty{width:4.6rem}
 .tl li::before{content:"";position:absolute;left:-.42rem;top:.2rem;width:.7rem;height:.7rem;border-radius:50%;background:var(--brand)}
 .tl .when{font-size:.8rem;color:var(--muted)}
 .urole{font-size:.8rem;color:var(--muted)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(1.2rem + env(safe-area-inset-bottom,0px));z-index:40;background:var(--ink);color:var(--surface);padding:.6rem 1rem;border-radius:8px;max-width:90%;box-shadow:0 10px 24px -10px rgba(0,0,0,.5)}
+@media print{body{background:#fff!important}.top,.side,.toast,.modal .btn,.modal button{display:none!important}body:has(.modalbg) .shell,body:has(.modalbg) main{display:none!important}.modalbg{position:static!important;background:none!important;padding:0!important;display:block!important}.modal{max-height:none!important;overflow:visible!important;box-shadow:none!important;max-width:none!important}} .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(1.2rem + env(safe-area-inset-bottom,0px));z-index:40;background:var(--ink);color:var(--surface);padding:.6rem 1rem;border-radius:8px;max-width:90%;box-shadow:0 10px 24px -10px rgba(0,0,0,.5)}
 .modalbg{position:fixed;inset:0;background:rgba(10,20,28,.5);z-index:35;display:flex;align-items:center;justify-content:center;padding:1rem}
 .modal{background:var(--surface);border-radius:12px;max-width:760px;width:100%;max-height:86vh;overflow:auto;padding:1.1rem 1.2rem}
 .modal.wide{max-width:1000px}
@@ -201,7 +201,7 @@ const PROVS=[{n:'Solventes del Istmo',rfc:'SIS0905127K3',tel:'951 514 2210',cont
 const ROLES={
  admin:{n:'Administración',u:'S. Ruiz',d:'Compras, facturación, cobranza, cartera y configuración',nav:[['inicio','Inicio'],['compras','Compras'],['fact','Facturación'],['cobranza','Cobranza'],['cartera','Cartera'],['reportes','Consultas y reportes'],['catalogos','Catálogos'],['precios','Precios'],['config','Configuración y usuarios']]},
  almacen:{n:'Almacén',u:'M. Cruz',d:'Recepción, inventario, envasado, surtido y conteos',nav:[['recepcion','Recepción'],['inventario','Inventario'],['traspaso','Traspaso'],['surtido','Surtido'],['conteo','Conteo físico'],['envios','Envío entre sucursales'],['movs','Salidas, ajustes y devoluciones']]},
- mostrador:{n:'Mostrador',u:'A. López',d:'Venta en mostrador y al personal',nav:[['venta','Venta en mostrador'],['personal','Venta al personal']]},
+ mostrador:{n:'Mostrador',u:'A. López',d:'Venta en mostrador y al personal',nav:[['venta','Venta en mostrador'],['personal','Venta al personal'],['corte','Corte de caja']]},
  vendedor:{n:'Vendedor',u:'R. Méndez',phone:true,d:'Pedidos en ruta desde el celular: Centro'},
  vendedor2:{n:'Vendedor',u:'L. Arroyo',phone:true,d:'Pedidos en ruta desde el celular: Tuxtepec y Valle'},
  repartidor:{n:'Repartidor',u:'J. Ramírez',phone:true,d:'Entregas, cobros en ruta y rendición'},
@@ -259,8 +259,9 @@ function seed(){
  };
 }
 let S;
-function load(){S=seed();}
-function save(){}
+const LSK='maxilimpios-prueba-v1';
+function load(){try{const j=localStorage.getItem(LSK);if(j){S=JSON.parse(j);S.ui.modal=null;S.ui.confirmReset=false;return;}}catch(e){}S=seed();}
+function save(){try{localStorage.setItem(LSK,JSON.stringify(S));}catch(e){}}
 
 /* ---------- consultas de negocio ---------- */
 const cliN=id=>id?(S.cli.find(c=>c.id===id)||{n:'—'}).n:'Público en general';
@@ -348,7 +349,7 @@ function TOP(){const R=ROLES[S.ui.role];return `<header class="top"><span class=
 function LOGIN(){const sel=S.ui.loginSel||'admin';return `<div class="login"><div class="lcard"><div class="lbrand">MAXILIMPIOS</div><p class="muted" style="margin:.3rem 0 1.3rem">Sistema administrativo</p><h2 style="font-size:1.15rem;margin-bottom:.8rem">Iniciar sesión</h2>
  ${Object.entries(ROLES).map(([k,r])=>`<button class="urow ${k===sel?'on':''}" data-a="pickUser" data-r="${k}" aria-pressed="${k===sel}"><span class="avatar">${ini(r.u)}</span><span><b>${esc(r.u)}</b>, ${esc(r.n)}<br><span class="urole">${esc(r.d)}</span></span></button>`).join('')}
  <div style="margin-top:.8rem">${F('Contraseña','<input type="password" id="lgPw" value="maxilimpios" autocomplete="current-password">')}</div>
- <button class="btn" data-a="login" style="width:100%;justify-content:center;margin-top:1rem">Entrar</button></div></div>`;}
+ <button class="btn" data-a="login" style="width:100%;justify-content:center;margin-top:1rem">Entrar</button>  <div style="margin-top:1.1rem;padding-top:.9rem;border-top:1px solid var(--line,#dde3e8)">${S.ui.confirmReset?`<p style="font-size:.9rem;margin:0 0 .6rem">Se borrará todo lo que hayan capturado en este navegador y el sistema volverá al inicio del día. ¿Continuar?</p><div class="row" style="gap:.5rem"><button class="btn" data-a="reset">Sí, volver al inicio</button><button class="btn ghost" data-a="resetNo">Cancelar</button></div>`:`<p class="muted" style="font-size:.85rem;margin:0 0 .5rem">Lo que capturen se guarda en este navegador.</p><button class="btn ghost" data-a="resetAsk" style="width:100%;justify-content:center">Volver a la información de ejemplo</button>`}</div></div></div>`;}
 function NAV(){const R=ROLES[S.ui.role];return `<nav class="side" aria-label="Secciones"><div class="who"><b>${esc(R.u)}</b>${esc(R.n)}, ${esc(S.sucs[S.suc].n)}</div>
  ${R.nav.map(([k,t])=>`<button class="${S.ui.scr===k?'on':''}" data-a="scr" data-v="${k}" ${S.ui.scr===k?'aria-current="page"':''}>${esc(t)}</button>`).join('')}</nav>`;}
 function OFFNOTE(){return S.net.suc?'':`<div class="note bad"><b>Sin conexión a internet.</b> La sucursal sigue operando. El timbrado, las cancelaciones, los correos y la consulta de otras sucursales se procesarán al restablecer la conexión.</div>`;}
@@ -684,12 +685,12 @@ A.login=()=>{const r=S.ui.loginSel||'admin';S.ui.role=r;S.ui.logged=true;S.ui.mo
 A.logout=()=>{S.ui.logged=false;S.ui.loginSel=S.ui.role;S.ui.modal=null;};
 A.scr=d=>{S.ui.scr=d.v;};
 A.goStepX=d=>{const s=STEPS[+d.i];S.ui.step=+d.i;S.ui.role=s.role;if(s.scr)S.ui.scr=s.scr;if(s.ph)S.ui.ph[s.role]=s.ph;if(s.role==='repartidor')S.ui.draft.rp=null;S.ui.drawer=false;S.ui.modal=null;if(s.role!=='vendedor'&&s.role!=='repartidor')S.suc='M';};
-A.reset=()=>{S=seed();toast('Información reiniciada.');};
+A.reset=()=>{S=seed();toast('Se regresó a la información de ejemplo.');}; A.resetAsk=()=>{S.ui.confirmReset=true;}; A.resetNo=()=>{S.ui.confirmReset=false;};
 A.modal=d=>{S.ui.modal=Object.assign({},d);};
 A.close=()=>{S.ui.modal=null;};
 A.closeBg=(d,el,e)=>{if(e.target===el)S.ui.modal=null;};
-A.print=()=>toast('Enviado a la impresora.');
-A.export=()=>toast('Exportación generada en hoja de cálculo.');
+A.print=()=>{setTimeout(()=>window.print(),80);};
+A.export=()=>{const t=document.querySelector('#main table');if(!t)return toast('No hay datos para exportar.');const q=c=>'"'+c.innerText.replace(/\s+/g,' ').trim().replace(/"/g,'""')+'"';const rows=[...t.querySelectorAll('tr')].map(r=>[...r.querySelectorAll('th,td')].map(q).join(','));const tb=document.querySelector('#main [role=tab][aria-selected="true"]'),h=document.querySelector('#main h2');const ttl=((tb&&tb.innerText)||(h&&h.innerText)||'Reporte').trim();const blob=new Blob(['\ufeff'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='MAXILIMPIOS - '+ttl+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);toast('Se descargó la hoja de cálculo.');};
 A.netSuc=()=>{if(S.net.suc){S.net.suc=false;alog('Sistema','La sucursal se quedó sin internet; sigue operando');toast('Sin conexión a internet. La sucursal sigue operando.');}else{S.net.suc=true;const n=stamp();alog('Sistema','Conexión restablecida'+(n?'; se timbraron '+n+' comprobantes':''));toast(n?`Conexión restablecida. Se timbraron ${n} comprobante${n>1?'s':''}.`:'Conexión restablecida.');}};
 A.netDev=d=>{if(S.net[d.dev]){S.net[d.dev]=false;}else{S.net[d.dev]=true;syncDev(d.dev);}};
 A.ph=d=>{S.ui.ph[S.ui.role]=d.v;if(S.ui.role==='repartidor')S.ui.draft.rp=null;};
@@ -766,9 +767,9 @@ A.regPago=()=>{const t=S.tk.find(x=>x.f===val('cbT'));const m=num('cbM');if(!t||
 /* catálogos, precios, configuración */
 A.saveCli=d=>{const o={n:val('cl_n'),rfc:val('cl_rfc'),reg:val('cl_reg'),cp:val('cl_cp'),uso:val('cl_uso'),dir:val('cl_dir'),ruta:val('cl_ruta'),vend:val('cl_vend'),pre:val('cl_pre'),dias:num('cl_dias'),lim:num('cl_lim'),mail:val('cl_mail')};if(!o.n)return toast('Captura el nombre.');
  o.incompleto=!(o.rfc&&o.reg&&o.cp);alog('Catálogos',(d.id?'Datos actualizados del cliente ':'Alta del cliente ')+o.n);if(d.id)Object.assign(C(d.id),o);else S.cli.push(Object.assign({id:'c'+Date.now()%100000,tel:''},o));S.ui.modal=null;toast('Cliente guardado.');};
-A.savePrices=()=>{if(!can('precios'))return;let n=0;const h=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});const nm={b:'base',v:'por volumen',m:'de menudeo'};
+A.savePrices=()=>{if(!can('precios'))return;let n=0;const h=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});const nm={b:'base',v:'por volumen',m:'de menudeo'};
  VENTA.forEach(k=>['b','v','m'].forEach(c=>{const e=document.getElementById(`pr_${k}_${c}`);if(!e)return;const v=+e.value;if(v!==SKU[k].p[c]){S.plog.unshift({h,u:user(),c:SKU[k].n+', precio '+nm[c],a:$f(SKU[k].p[c]),n:$f(v)});alog('Precios','Cambio de precio '+nm[c]+' de '+SKU[k].n+': '+$f(SKU[k].p[c])+' a '+$f(v));SKU[k].p[c]=v;S.pOver=S.pOver||{};S.pOver[k+c]=v;n++;}}));toast(n?`Se guardaron ${n} cambios de precio.`:'Sin cambios.');};
-A.saveAsig=()=>{const h=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});S.cli.forEach(c=>{const v=val('pa_'+c.id);if(v&&v!==c.pre){S.plog.unshift({h,u:user(),c:c.n+', precio asignado',a:c.pre==='v'?'Por volumen':'Base',n:v==='v'?'Por volumen':'Base'});alog('Precios','Precio asignado a '+c.n+': '+(v==='v'?'por volumen':'base'));c.pre=v;}});toast('Asignación guardada.');};
+A.saveAsig=()=>{const h=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});S.cli.forEach(c=>{const v=val('pa_'+c.id);if(v&&v!==c.pre){S.plog.unshift({h,u:user(),c:c.n+', precio asignado',a:c.pre==='v'?'Por volumen':'Base',n:v==='v'?'Por volumen':'Base'});alog('Precios','Precio asignado a '+c.n+': '+(v==='v'?'por volumen':'base'));c.pre=v;}});toast('Asignación guardada.');};
 A.saveDesc=()=>{S.cfg.esc.forEach((e,i)=>{e.min=num('es_m_'+i);e.p=num('es_p_'+i);});S.cfg.pp.p=num('pp_p');S.cfg.pp.d=num('pp_d');alog('Configuración','Descuentos actualizados');toast('Descuentos guardados.');};
 A.addMot=d=>{const v=val('nm_'+d.k).trim();if(v){S.cfg[d.k].push(v);toast('Motivo agregado.');}};
 A.saveCos=()=>{const r=document.querySelector('input[name="cos"]:checked');if(r){S.cfg.costeo=r.value;alog('Configuración','Método de costeo: '+({prom:'costo promedio',peps:'PEPS',ult:'última compra'})[r.value]);toast('Método de costeo guardado.');}};
@@ -883,11 +884,23 @@ MOD.seg=m=>{const t=S.tk.find(x=>x.f===m.f);if(!t)return `<p>No se encontró el 
  <div class="segg"><div><h3 style="font-size:.95rem;margin-bottom:.7rem">Seguimiento</h3><ul class="tl">${ev.map(x=>`<li><div>${esc(x.e)}</div><div class="when">${[x.d,x.h,x.u].filter(Boolean).map(esc).join(', ')}</div></li>`).join('')}</ul></div>
  <div>${lines}<div class="sum" style="margin:.6rem 0"><span>Total</span><span>${$f(c.total)}</span><span>Cobrado</span><span>${$f(tPag(t))}</span><span class="t">Saldo</span><span class="t">${$f(tSaldo(t))}</span></div>
  <h3 style="font-size:.95rem;margin:.8rem 0 .3rem">Cobros</h3>${pg}${fx?`<div style="margin-top:.8rem">${B('Ver factura','modal',{k:'cfdi',id:fx.id},'ghost sm')}</div>`:''}</div></div>${X}`;};
+
+const $d=n=>n<0?'-'+$f(-n):$f(n);
+const corteL=()=>S.tk.filter(t=>!t.hist&&t.canal==='mostrador'&&t.suc===S.suc&&t.est!=='cancelado'&&!(S.cortes||[]).some(c=>c.tks.includes(t.f)));
+const CFS=['Efectivo','Transferencia','Tarjeta','Crédito'];
+const corteSum=(L,f)=>r2(L.filter(t=>(t.forma||'Efectivo')===f).reduce((a,t)=>a+tTotal(t),0));
+SCR.corte=()=>{const L=corteL();const tot=r2(CFS.reduce((a,f)=>a+corteSum(L,f),0));
+ return HEAD('Corte de caja')+`<div class="grid2"><div class="panel"><h3>Ventas desde el último corte</h3>${TB(['Ticket','Cliente','Forma de pago','Total#'],L.map(t=>`<tr>${td(FL(t.f))}${td(esc(cliN(t.cli)))}${td(esc(t.forma||'Efectivo'))}${td($f(tTotal(t)),1)}</tr>`),'No hay ventas desde el último corte.')}</div>
+ <div class="panel"><h3>Resumen</h3><div class="sum">${CFS.map(f=>`<span>${f}</span><span>${$f(corteSum(L,f))}</span>`).join('')}<span class="t">Total vendido</span><span class="t">${$f(tot)}</span></div>
+ <div class="grid2" style="margin-top:.8rem">${F('Fondo de caja',`<input type="number" id="ccF" min="0" step=".5" value="${S.ccFondo==null?500:S.ccFondo}">`)}${F('Efectivo contado en caja','<input type="number" id="ccE" min="0" step=".5">')}</div>
+ <p class="muted" style="font-size:.85rem">En caja debe haber el fondo más las ventas en efectivo: ${$f(r2((S.ccFondo==null?500:S.ccFondo)+corteSum(L,'Efectivo')))}.</p>${B('Cerrar caja','corte',{},'',!L.length)}</div></div>
+ <div class="panel"><h3>Cortes anteriores</h3>${TB(['Hora','Usuario','Tickets#','Efectivo esperado#','Contado#','Diferencia#'],(S.cortes||[]).slice().reverse().map(c=>`<tr>${td(esc(c.h))}${td(esc(c.u))}${td(c.tks.length,1)}${td($f(c.esp),1)}${td($f(c.cont),1)}${td($d(c.dif),1)}</tr>`),'Todavía no hay cortes.')}</div>`;};
+A.corte=()=>{const L=corteL();if(!L.length)return;const fondo=num('ccF'),cont=num('ccE');S.ccFondo=fondo;const esp=r2(fondo+corteSum(L,'Efectivo')),dif=r2(cont-esp);(S.cortes=S.cortes||[]).push({h:hhmm(),u:user(),tks:L.map(t=>t.f),esp,cont,dif});alog('Ventas','Corte de caja: esperado '+$f(esp)+', contado '+$f(cont)+(dif?', diferencia '+$d(dif):', sin diferencias'));toast(dif?'Caja cerrada con una diferencia de '+$d(dif)+'.':'Caja cerrada sin diferencias.');};
 /* ---------- arranque ---------- */
 document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el||el.disabled)return;const f=A[el.dataset.a];if(!f)return;f(el.dataset,el,e);save();render();});
 document.addEventListener('change',e=>{const el=e.target.closest('[data-ch]');if(!el)return;const f=CH[el.dataset.ch];if(!f)return;f(el.value,el);save();render();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.ui.modal){S.ui.modal=null;render();}});
-load();Object.entries(S.xsku||{}).forEach(([k,o])=>addSku(k,o));(S.xprov||[]).forEach(p=>{if(!PROVS.find(x=>x.n===p.n))PROVS.push(p);});if(S.pOver)Object.entries(S.pOver).forEach(([kc,v])=>{SKU[kc.slice(0,-1)].p[kc.slice(-1)]=v;});S.ui.syncing={};render();
+load();Object.entries(S.xsku||{}).forEach(([k,o])=>addSku(k,o));(S.xprov||[]).forEach(p=>{if(!PROVS.find(x=>x.n===p.n))PROVS.push(p);});if(S.pOver)Object.entries(S.pOver).forEach(([kc,v])=>{SKU[kc.slice(0,-1)].p[kc.slice(-1)]=v;});S.ui.syncing={};render();window.addEventListener('beforeunload',save);setInterval(save,2000);
 </script>
 </body>
 </html>
